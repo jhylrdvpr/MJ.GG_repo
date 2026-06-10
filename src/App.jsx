@@ -6,14 +6,14 @@ import { recommendBuild } from './recommendation.js';
 
 function Chip({ children }) {
   return (
-    <span className="inline-flex rounded-full border border-slate-700 bg-slate-950/90 px-3 py-1 text-sm text-slate-200">{children}</span>
+    <span className="inline-flex rounded-full border border-lol-border bg-lol-surface-soft px-3 py-1 text-sm text-lol-gold">{children}</span>
   );
 }
 
 function ListCard({ label, values }) {
   return (
-    <div className="rounded-3xl border border-slate-800/70 bg-slate-950/70 p-4">
-      <p className="text-sm uppercase tracking-[0.3em] text-slate-400">{label}</p>
+    <div className="rounded-3xl border border-lol-border bg-lol-surface-soft p-4">
+      <p className="text-sm uppercase tracking-[0.3em] text-lol-muted">{label}</p>
       <div className="mt-4 flex flex-wrap gap-3">
         {values.map((item) => (
           <Chip key={item}>{item}</Chip>
@@ -25,11 +25,15 @@ function ListCard({ label, values }) {
 
 function ExplanationRow({ title, explanation }) {
   return (
-    <div className="rounded-3xl border border-slate-800/70 bg-slate-950/70 p-4">
+    <div className="rounded-3xl border border-lol-border bg-lol-surface-soft p-4">
       <p className="font-semibold text-slate-100">{title}</p>
       <p className="mt-2 text-sm leading-6 text-slate-400">{explanation}</p>
     </div>
   );
+}
+
+function Divider() {
+  return <div className="section-divider my-10 h-px" />;
 }
 
 export default function App() {
@@ -112,22 +116,26 @@ export default function App() {
   };
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-      <header className="mb-8 flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
+    <div className="relative overflow-hidden splash-overlay">
+      <div className="pointer-events-none absolute inset-0 bg-lol-hero opacity-85" />
+      <div className="pointer-events-none absolute left-[8%] top-0 h-[520px] w-[520px] rounded-full bg-gradient-to-br from-lol-gold/20 to-transparent blur-3xl" />
+      <div className="pointer-events-none absolute right-[8%] top-[8%] h-[520px] w-[520px] rounded-full bg-gradient-to-tr from-lol-purple/20 to-transparent blur-3xl" />
+      <div className="relative mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+        <header className="mb-8 flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <p className="text-sm uppercase tracking-[0.4em] text-cyan-300/80">League Companion</p>
-          <h1 className="mt-3 text-4xl font-semibold text-slate-100 sm:text-5xl">MJ.GG</h1>
-          <p className="mt-4 max-w-2xl text-slate-400">Live Data Dragon champion metadata and item lookups power the recommendations.</p>
+          <p className="text-sm uppercase tracking-[0.4em] text-lol-gold/80">League Companion</p>
+          <h1 className="mt-3 text-4xl font-display font-semibold text-lol-gold sm:text-5xl">MJ.GG</h1>
+          <p className="mt-4 max-w-2xl text-lol-muted">Live Data Dragon champion metadata and item lookups power the recommendations.</p>
         </div>
-        <div className="rounded-3xl border border-slate-800/80 bg-slate-900/80 p-5 text-right shadow-glow backdrop-blur-xl">
-          <p className="text-sm text-slate-400">Selected champion</p>
+        <div className="rounded-3xl border border-lol-border bg-lol-surface p-5 text-right shadow-glow backdrop-blur-xl">
+          <p className="text-sm text-lol-muted">Selected champion</p>
           <p className="mt-2 text-2xl font-semibold text-slate-100">{champion?.name ?? 'Loading...'}</p>
-          <p className="mt-1 text-sm text-slate-500">{champion?.description ?? 'Fetching champion data...'}</p>
+          <p className="mt-1 text-sm text-lol-muted">{champion?.description ?? 'Fetching champion data...'}</p>
         </div>
       </header>
 
       <main className="space-y-8">
-        <section className="rounded-3xl border border-slate-800/80 bg-slate-900/80 p-6 shadow-glow backdrop-blur-xl">
+        <section className="rounded-3xl border border-lol-border bg-lol-surface p-6 shadow-glow backdrop-blur-xl">
           <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <p className="text-sm uppercase tracking-[0.3em] text-cyan-300/80">Riot API Lookup</p>
@@ -135,7 +143,7 @@ export default function App() {
             </div>
             <button
               onClick={onFetchSummoner}
-              className="inline-flex items-center justify-center rounded-2xl bg-cyan-500 px-6 py-3 text-sm font-semibold text-slate-950 transition hover:bg-cyan-400"
+              className="inline-flex items-center justify-center rounded-2xl btn-gold px-6 py-3 text-sm font-semibold text-slate-950 transition hover:brightness-110"
             >
               Fetch Summoner
             </button>
@@ -165,7 +173,7 @@ export default function App() {
                 className="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-100 outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-500/20"
               />
             </label>
-            <div className="rounded-3xl border border-slate-800 bg-slate-950/80 p-4">
+            <div className="rounded-3xl border border-lol-border bg-lol-surface-soft p-4">
               {riotLoading ? (
                 <p className="text-slate-400">Fetching Riot data...</p>
               ) : riotError ? (
@@ -183,6 +191,8 @@ export default function App() {
           </div>
         </section>
 
+        <Divider />
+
         <SelectPanel
           championId={championId}
           role={role}
@@ -191,6 +201,8 @@ export default function App() {
           onChange={onChange}
           onGenerate={onGenerate}
         />
+
+        <Divider />
 
         {loading ? (
           <div className="rounded-3xl border border-dashed border-slate-700/70 bg-slate-900/70 p-10 text-center text-slate-400">
@@ -266,5 +278,6 @@ export default function App() {
         <p>League Companion MVP — powered by Riot Data Dragon metadata for champions and items.</p>
       </footer>
     </div>
+  </div>
   );
 }

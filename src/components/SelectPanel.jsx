@@ -2,11 +2,11 @@ import React from 'react';
 
 export default function SelectPanel({ championId, role, enemyId, data, onChange, onGenerate }) {
   return (
-    <section className="space-y-6 rounded-3xl border border-slate-800/80 bg-slate-900/80 p-6 shadow-glow backdrop-blur-xl">
+    <section className="space-y-6 rounded-3xl border border-lol-border bg-lol-surface p-6 shadow-glow backdrop-blur-xl">
       <div>
-        <p className="text-sm uppercase tracking-[0.3em] text-cyan-300/80">Champion Selection</p>
-        <h2 className="mt-3 text-3xl font-semibold text-slate-100">Build your next game plan</h2>
-        <p className="mt-2 max-w-2xl text-slate-400">Choose your champion, lane, and enemy threats for tailored rune and item guidance.</p>
+        <p className="text-sm uppercase tracking-[0.3em] text-lol-gold/80">Champion Selection</p>
+        <h2 className="mt-3 text-3xl font-display font-semibold text-lol-gold">Build your next game plan</h2>
+        <p className="mt-2 max-w-2xl text-lol-muted">Choose your champion, lane, and enemy threats for tailored rune and item guidance.</p>
       </div>
 
       <div className="grid gap-4 md:grid-cols-3">
