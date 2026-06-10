@@ -38,25 +38,59 @@ export async function fetchItemData() {
 
 export async function fetchRunesData() {
   const version = await getLatestVersion();
-  const response = await fetch(`${DATA_DRAGON_BASE}/${version}/data/${LOCALE}/runetree.json`);
-  const raw = await response.json();
-  
-  // Normalize runes into a flat map for easy lookup
+  const primaryUrl = `${DATA_DRAGON_BASE}/${version}/data/${LOCALE}/runetree.json`;
+  const fallbackUrl = `${DATA_DRAGON_BASE}/${version}/data/${LOCALE}/runesReforged.json`;
+
+  async function tryFetch(url) {
+    const res = await fetch(url);
+    if (!res.ok) {
+      const err = new Error(`Failed to fetch ${url}: ${res.status} ${res.statusText}`);
+      err.status = res.status;
+      throw err;
+    }
+    return res.json();
+  }
+
+  let raw;
+  try {
+    raw = await tryFetch(primaryUrl);
+  } catch (err) {
+    if (err.status === 403 || err.status === 404) {
+      try {
+        raw = await tryFetch(fallbackUrl);
+      } catch (err2) {
+        throw new Error(`Could not load rune data from Data Dragon (tried ${primaryUrl} and ${fallbackUrl}): ${err2.message}`);
+      }
+    } else {
+      throw new Error(`Could not load rune data from Data Dragon: ${err.message}`);
+    }
+  }
+
+  // Normalize runes into a flat map for easy lookup. DataDragon may return an array
+  // (runesReforged.json) or an object/array shape for runetree.json.
+  const trees = Array.isArray(raw) ? raw : (raw.data || raw);
   const runeMap = {};
-  raw.forEach((tree) => {
+
+  trees.forEach((tree) => {
+    let normalizedSlots = [];
+
+    if (Array.isArray(tree.slots)) {
+      normalizedSlots = tree.slots.map((slot) => {
+        const runes = Array.isArray(slot.runes)
+          ? slot.runes.map((rune) => ({ id: rune.id, key: rune.key, name: rune.name, description: rune.longDesc || rune.shortDesc || rune.longDesc }))
+          : [];
+        return { runes };
+      });
+    } else if (Array.isArray(tree.runes)) {
+      normalizedSlots = [{ runes: tree.runes.map((rune) => ({ id: rune.id, key: rune.key, name: rune.name, description: rune.longDesc || rune.shortDesc })) }];
+    }
+
     runeMap[tree.id] = {
       id: tree.id,
-      name: tree.name,
-      slots: tree.slots.map((slot) => ({
-        runes: slot.runes.map((rune) => ({
-          id: rune.id,
-          key: rune.key,
-          name: rune.name,
-          description: rune.longDesc,
-        })),
-      })),
+      name: tree.name || tree.key || '',
+      slots: normalizedSlots,
     };
   });
-  
+
   return runeMap;
 }
