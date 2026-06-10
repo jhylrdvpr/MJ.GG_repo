@@ -170,26 +170,25 @@ const buildProfiles = {
   },
 };
 
-function buildEnemyAdaptation(enemyInput) {
-  const enemies = enemyInput
-    .split(',')
-    .map((enemy) => enemy.trim().toLowerCase())
-    .filter(Boolean);
+function buildEnemyAdaptation(enemyId) {
+  const enemy = enemyId.toLowerCase();
+  const assassins = ['zed', 'talon', 'kha\'zix', 'ekko', 'leblanc'];
+  const engagers = ['leona', 'blitzcrank', 'thresh', 'alistar'];
+  const carries = ['vayne', 'kai\'sa', 'caitlyn'];
 
-  const adaptation = [];
-  if (enemies.some((e) => ['zed', 'talon', 'kha\'zix', 'ekko', 'leblanc'].includes(e))) {
-    adaptation.push('Prioritize defensive timing items and vision to survive assassination threats.');
+  if (assassins.includes(enemy)) {
+    return 'Prioritize defensive timing items and vision to survive assassination threats.';
   }
-  if (enemies.some((e) => ['leona', 'blitzcrank', 'thresh', 'alistar'].includes(e))) {
-    adaptation.push('Expect strong engage; keep distance and favor shields or magic resist.');
+  if (engagers.includes(enemy)) {
+    return 'Expect strong engage; keep distance and favor shields or magic resist.';
   }
-  if (enemies.some((e) => ['vayne', 'kai\'sa', 'caitlyn'].includes(e))) {
-    adaptation.push('Build for sustained DPS and anti-heal when the enemy carry is the main threat.');
+  if (carries.includes(enemy)) {
+    return 'Build for sustained DPS and anti-heal when the enemy carry is the main threat.';
   }
-  return adaptation.length ? adaptation.join(' ') : 'This build stays balanced for common skirmishes and objective control.';
+  return 'This build stays balanced for common skirmishes and objective control.';
 }
 
-export function recommendBuild(champion, role, enemyInput, itemData) {
+export function recommendBuild(champion, role, enemyId, itemData) {
   const profileKey = selectBuildProfile(champion.tags || [], role);
   const profile = buildProfiles[profileKey];
   const runes = profile.runes;
@@ -200,11 +199,6 @@ export function recommendBuild(champion, role, enemyInput, itemData) {
     final: resolveItems(itemData, profile.items.final),
     explanations: profile.items.explanations,
   };
-
-  const enemies = enemyInput
-    .split(',')
-    .map((name) => name.trim())
-    .filter(Boolean);
 
   return {
     championName: champion.name,
@@ -220,7 +214,7 @@ export function recommendBuild(champion, role, enemyInput, itemData) {
       ],
       laneApproach: `Win trades with strong poke and ability rotation, then look for roams or objective control depending on the role.`,
       teamfight: `Position around the strongest enemy threats, either diving the carry or protecting your own backline.`,
-      adaptation: buildEnemyAdaptation(enemyInput),
+      adaptation: buildEnemyAdaptation(enemyId),
     },
   };
 }

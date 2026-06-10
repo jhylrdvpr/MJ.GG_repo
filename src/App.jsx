@@ -3,6 +3,7 @@ import SelectPanel from './components/SelectPanel.jsx';
 import ResultCard from './components/ResultCard.jsx';
 import { fetchChampionList, fetchItemData } from './api.js';
 import { recommendBuild } from './recommendation.js';
+import { enemies } from './data.js';
 
 function Chip({ children }) {
   return (
@@ -37,7 +38,7 @@ export default function App() {
   const [itemData, setItemData] = useState({});
   const [championId, setChampionId] = useState('');
   const [role, setRole] = useState('Mid');
-  const [enemyInput, setEnemyInput] = useState('Zed');
+  const [enemyId, setEnemyId] = useState('Zed');
   const [output, setOutput] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -66,12 +67,12 @@ export default function App() {
     const { name, value } = event.target;
     if (name === 'championId') setChampionId(value);
     if (name === 'role') setRole(value);
-    if (name === 'enemyInput') setEnemyInput(value);
+    if (name === 'enemyId') setEnemyId(value);
   };
 
   const onGenerate = () => {
     if (!champion || !Object.keys(itemData).length) return;
-    setOutput(recommendBuild(champion, role, enemyInput, itemData));
+    setOutput(recommendBuild(champion, role, enemyId, itemData));
   };
 
   return (
@@ -93,8 +94,9 @@ export default function App() {
         <SelectPanel
           championId={championId}
           role={role}
-          enemyInput={enemyInput}
+          enemyId={enemyId}
           data={champions}
+          enemies={enemies}
           onChange={onChange}
           onGenerate={onGenerate}
         />

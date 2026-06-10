@@ -3,10 +3,13 @@
   "private": true,
   "version": "0.1.0",
   "type": "module",
+  "homepage": "https://jhylrdvpr.github.io/MJ.GG_repo/",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "predeploy": "npm run build",
+    "deploy": "gh-pages -d dist"
   },
   "dependencies": {
     "react": "^18.3.1",
@@ -19,13 +22,6 @@
     "postcss": "^8.4.35",
     "tailwindcss": "^3.4.5",
     "vite": "^5.4.1"
-  },
-  "homepage": "https://jhylrdvpr.github.io/MJ.GG_repo/",
-  "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "predeploy": "npm run build",
-    "deploy": "gh-pages -d dist"
   }
 }
 

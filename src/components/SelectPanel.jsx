@@ -1,6 +1,6 @@
 import React from 'react';
 
-export default function SelectPanel({ championId, role, enemyInput, data, onChange, onGenerate }) {
+export default function SelectPanel({ championId, role, enemyId, data, enemies, onChange, onGenerate }) {
   return (
     <section className="space-y-6 rounded-3xl border border-slate-800/80 bg-slate-900/80 p-6 shadow-glow backdrop-blur-xl">
       <div>
@@ -39,19 +39,22 @@ export default function SelectPanel({ championId, role, enemyInput, data, onChan
         </label>
 
         <label className="space-y-2">
-          <span className="text-sm text-slate-300">Enemy matchup</span>
-          <input
-            name="enemyInput"
-            value={enemyInput}
+          <span className="text-sm text-slate-300">Enemy Champion</span>
+          <select
+            name="enemyId"
+            value={enemyId}
             onChange={onChange}
-            placeholder="Zed, Leona, Vayne"
             className="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-100 outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-500/20"
-          />
+          >
+            {enemies.map((enemy) => (
+              <option key={enemy} value={enemy}>{enemy}</option>
+            ))}
+          </select>
         </label>
       </div>
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <p className="text-sm text-slate-400">This MVP is powered by sample champion data and simple recommendation rules.</p>
+        <p className="text-sm text-slate-400">This MVP is powered by real League champion data from Riot Data Dragon.</p>
         <button
           onClick={onGenerate}
           className="inline-flex items-center justify-center rounded-2xl bg-cyan-500 px-6 py-3 text-sm font-semibold text-slate-950 transition hover:bg-cyan-400"

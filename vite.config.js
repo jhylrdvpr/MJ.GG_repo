@@ -3,5 +3,6 @@ import react from '@vitejs/plugin-react';
 
 export default defineConfig({
   plugins: [react()],
-  base: '/MJ.GG_repo/',
+  // Use relative paths for GitHub Pages compatibility. Change to '/REPO_NAME/' if you prefer absolute base.
+  base: './',
 });
