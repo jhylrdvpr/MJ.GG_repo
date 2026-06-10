@@ -43,6 +43,7 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [summonerName, setSummonerName] = useState('Faker');
+  const [platform, setPlatform] = useState('na1');
   const [summonerData, setSummonerData] = useState(null);
   const [riotLoading, setRiotLoading] = useState(false);
   const [riotError, setRiotError] = useState(null);
@@ -53,15 +54,16 @@ export default function App() {
     setRiotLoading(true);
     setRiotError(null);
     try {
-      const response = await fetch(`/api/riot/summoner/na1/${encodeURIComponent(summonerName)}`);
-      if (!response.ok) {
-        throw new Error(`Riot API request failed: ${response.status}`);
-      }
+      const response = await fetch(`/api/riot/summoner/${platform}/${encodeURIComponent(summonerName)}`);
       const data = await response.json();
+      if (!response.ok) {
+        const message = data.status?.message || data.error || 'Unknown error';
+        throw new Error(`Riot API request failed: ${response.status} ${message}`);
+      }
       setSummonerData(data);
     } catch (err) {
       console.error(err);
-      setRiotError('Could not load Riot account data. Check the API proxy and key.');
+      setRiotError(`Could not load Riot account data: ${err.message}`);
       setSummonerData(null);
     } finally {
       setRiotLoading(false);
@@ -139,6 +141,21 @@ export default function App() {
             </button>
           </div>
           <div className="grid gap-4 md:grid-cols-2">
+            <label className="space-y-2">
+              <span className="text-sm text-slate-300">Platform</span>
+              <select
+                name="platform"
+                value={platform}
+                onChange={(e) => setPlatform(e.target.value)}
+                className="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-100 outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-500/20"
+              >
+                <option value="na1">NA1</option>
+                <option value="euw1">EUW1</option>
+                <option value="eun1">EUN1</option>
+                <option value="kr">KR</option>
+                <option value="br1">BR1</option>
+              </select>
+            </label>
             <label className="space-y-2">
               <span className="text-sm text-slate-300">Summoner Name</span>
               <input
