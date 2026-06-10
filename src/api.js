@@ -1,10 +1,10 @@
+export const DATA_DRAGON_BASE = 'https://ddragon.leagueoflegends.com/cdn';
 const VERSIONS_URL = 'https://ddragon.leagueoflegends.com/api/versions.json';
-const DATA_DRAGON_BASE = 'https://ddragon.leagueoflegends.com/cdn';
 const LOCALE = 'en_US';
 
 let cachedVersion = null;
 
-async function getLatestVersion() {
+export async function getLatestVersion() {
   if (cachedVersion) return cachedVersion;
   const response = await fetch(VERSIONS_URL);
   const versions = await response.json();
@@ -25,6 +25,7 @@ export async function fetchChampionList() {
       tags: champion.tags,
       description: champion.blurb,
       key: champion.key,
+      image: `${DATA_DRAGON_BASE}/${version}/img/champion/${champion.image.full}`,
     }))
     .sort((a, b) => a.name.localeCompare(b.name));
 }
@@ -33,7 +34,14 @@ export async function fetchItemData() {
   const version = await getLatestVersion();
   const response = await fetch(`${DATA_DRAGON_BASE}/${version}/data/${LOCALE}/item.json`);
   const raw = await response.json();
-  return raw.data;
+  const items = raw.data;
+  const itemIcons = {};
+
+  Object.values(items).forEach((item) => {
+    itemIcons[item.name] = `${DATA_DRAGON_BASE}/${version}/img/item/${item.image.full}`;
+  });
+
+  return { items, itemIcons };
 }
 
 export async function fetchRunesData() {
@@ -77,17 +85,32 @@ export async function fetchRunesData() {
     if (Array.isArray(tree.slots)) {
       normalizedSlots = tree.slots.map((slot) => {
         const runes = Array.isArray(slot.runes)
-          ? slot.runes.map((rune) => ({ id: rune.id, key: rune.key, name: rune.name, description: rune.longDesc || rune.shortDesc || rune.longDesc }))
+          ? slot.runes.map((rune) => ({
+              id: rune.id,
+              key: rune.key,
+              name: rune.name,
+              description: rune.longDesc || rune.shortDesc || rune.longDesc,
+              icon: rune.icon ? `${DATA_DRAGON_BASE}/${version}/img/${rune.icon}` : rune.icon,
+            }))
           : [];
         return { runes };
       });
     } else if (Array.isArray(tree.runes)) {
-      normalizedSlots = [{ runes: tree.runes.map((rune) => ({ id: rune.id, key: rune.key, name: rune.name, description: rune.longDesc || rune.shortDesc })) }];
+      normalizedSlots = [{
+        runes: tree.runes.map((rune) => ({
+          id: rune.id,
+          key: rune.key,
+          name: rune.name,
+          description: rune.longDesc || rune.shortDesc,
+          icon: rune.icon ? `${DATA_DRAGON_BASE}/${version}/img/${rune.icon}` : rune.icon,
+        })),
+      }];
     }
 
     runeMap[tree.id] = {
       id: tree.id,
       name: tree.name || tree.key || '',
+      icon: tree.icon ? `${DATA_DRAGON_BASE}/${version}/img/${tree.icon}` : tree.icon,
       slots: normalizedSlots,
     };
   });

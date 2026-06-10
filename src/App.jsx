@@ -6,7 +6,9 @@ import { recommendBuild } from './recommendation.js';
 
 function Chip({ children }) {
   return (
-    <span className="inline-flex rounded-full border border-lol-border bg-lol-surface-soft px-3 py-1 text-sm text-lol-gold">{children}</span>
+    <span className="inline-flex items-center gap-2 rounded-full border border-lol-border bg-lol-surface-soft px-3 py-1 text-sm text-lol-gold">
+      {children}
+    </span>
   );
 }
 
@@ -15,18 +17,32 @@ function ListCard({ label, values }) {
     <div className="rounded-3xl border border-lol-border bg-lol-surface-soft p-4">
       <p className="text-sm uppercase tracking-[0.3em] text-lol-muted">{label}</p>
       <div className="mt-4 flex flex-wrap gap-3">
-        {values.map((item) => (
-          <Chip key={item}>{item}</Chip>
-        ))}
+        {values.map((item) => {
+          const name = typeof item === 'string' ? item : item.name;
+          const icon = typeof item === 'object' && item.icon ? item.icon : null;
+          return (
+            <Chip key={name}>
+              {icon ? (
+                <img src={icon} alt={name} className="h-5 w-5 rounded-full border border-slate-800 bg-slate-950 object-cover" />
+              ) : null}
+              {name}
+            </Chip>
+          );
+        })}
       </div>
     </div>
   );
 }
 
-function ExplanationRow({ title, explanation }) {
+function ExplanationRow({ title, explanation, icon }) {
   return (
     <div className="rounded-3xl border border-lol-border bg-lol-surface-soft p-4">
-      <p className="font-semibold text-slate-100">{title}</p>
+      <div className="flex items-center gap-3">
+        {icon ? (
+          <img src={icon} alt={title} className="h-8 w-8 rounded-full border border-slate-800 bg-slate-950 object-cover" />
+        ) : null}
+        <p className="font-semibold text-slate-100">{title}</p>
+      </div>
       <p className="mt-2 text-sm leading-6 text-slate-400">{explanation}</p>
     </div>
   );
@@ -38,7 +54,7 @@ function Divider() {
 
 export default function App() {
   const [champions, setChampions] = useState([]);
-  const [itemData, setItemData] = useState({});
+  const [itemData, setItemData] = useState({ items: {}, itemIcons: {} });
   const [runesData, setRunesData] = useState({});
   const [championId, setChampionId] = useState('');
   const [role, setRole] = useState('Mid');
@@ -53,6 +69,7 @@ export default function App() {
   const [riotError, setRiotError] = useState(null);
 
   const champion = useMemo(() => champions.find((champ) => champ.id === championId), [champions, championId]);
+  const enemyChampion = useMemo(() => champions.find((champ) => champ.id === enemyId), [champions, enemyId]);
 
   async function fetchSummoner() {
     setRiotLoading(true);
@@ -78,13 +95,13 @@ export default function App() {
     async function loadData() {
       setLoading(true);
       try {
-        const [championList, items, runes] = await Promise.all([
+        const [championList, itemPayload, runes] = await Promise.all([
           fetchChampionList(),
           fetchItemData(),
           fetchRunesData(),
         ]);
         setChampions(championList);
-        setItemData(items);
+        setItemData(itemPayload);
         setRunesData(runes);
         const ahrId = championList.find((champ) => champ.name === 'Ahri')?.id ?? championList[0]?.id ?? '';
         setChampionId(ahrId);
@@ -127,10 +144,46 @@ export default function App() {
           <h1 className="mt-3 text-4xl font-display font-semibold text-lol-gold sm:text-5xl">MJ.GG</h1>
           <p className="mt-4 max-w-2xl text-lol-muted">Live Data Dragon champion metadata and item lookups power the recommendations.</p>
         </div>
-        <div className="rounded-3xl border border-lol-border bg-lol-surface p-5 text-right shadow-glow backdrop-blur-xl">
-          <p className="text-sm text-lol-muted">Selected champion</p>
-          <p className="mt-2 text-2xl font-semibold text-slate-100">{champion?.name ?? 'Loading...'}</p>
-          <p className="mt-1 text-sm text-lol-muted">{champion?.description ?? 'Fetching champion data...'}</p>
+        <div className="grid gap-4 sm:grid-cols-[auto_1fr] rounded-3xl border border-lol-border bg-lol-surface p-5 text-right shadow-glow backdrop-blur-xl">
+          <div className="grid gap-3 sm:grid-cols-2 sm:items-center">
+            <div className="relative overflow-hidden rounded-3xl bg-slate-950/30 p-3">
+              {champion?.image ? (
+                <img
+                  src={champion.image}
+                  alt={champion?.name}
+                  className="h-24 w-24 rounded-3xl border border-lol-border object-cover"
+                />
+              ) : (
+                <div className="flex h-24 w-24 items-center justify-center rounded-3xl border border-lol-border bg-slate-900 text-slate-500">
+                  ?
+                </div>
+              )}
+              <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-slate-950/90 to-transparent" />
+            </div>
+            <div className="rounded-3xl border border-slate-800 bg-slate-950/40 p-3">
+              <p className="text-xs uppercase tracking-[0.4em] text-lol-gold/70">Enemy matchup</p>
+              <div className="mt-3 flex items-center gap-3">
+                {enemyChampion?.image ? (
+                  <img
+                    src={enemyChampion.image}
+                    alt={enemyChampion.name}
+                    className="h-14 w-14 rounded-2xl border border-lol-border object-cover"
+                  />
+                ) : (
+                  <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-lol-border bg-slate-900 text-slate-500">?</div>
+                )}
+                <div>
+                  <p className="text-sm font-semibold text-slate-100">{enemyChampion?.name ?? 'Enemy'}</p>
+                  <p className="text-xs text-slate-400">Selected enemy champion</p>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div>
+            <p className="text-sm text-lol-muted">Selected champion</p>
+            <p className="mt-2 text-2xl font-semibold text-slate-100">{champion?.name ?? 'Loading...'}</p>
+            <p className="mt-1 text-sm text-lol-muted">{champion?.description ?? 'Fetching champion data...'}</p>
+          </div>
         </div>
       </header>
 
@@ -216,11 +269,28 @@ export default function App() {
           <section className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
             <div className="space-y-6">
               <ResultCard title="Rune Recommendation">
-                <ListCard label="Primary Tree" values={[output.runes.primary, output.runes.keystone]} />
-                <ListCard label="Secondary Tree + Shards" values={[output.runes.secondary, ...output.runes.shards]} />
+                <ListCard
+                  label="Primary Tree"
+                  values={[
+                    { name: output.runes.primary, icon: output.runes.primaryIcon },
+                    { name: output.runes.keystone, icon: output.runes.keystoneIcon },
+                  ]}
+                />
+                <ListCard
+                  label="Secondary Tree + Shards"
+                  values={[
+                    { name: output.runes.secondary, icon: output.runes.secondaryIcon },
+                    ...output.runes.shards.map((shard) => ({ name: shard })),
+                  ]}
+                />
                 <div className="grid gap-4 md:grid-cols-2">
                   {output.runes.details.map((detail) => (
-                    <ExplanationRow key={detail.title} title={detail.title} explanation={detail.explanation} />
+                    <ExplanationRow
+                      key={detail.title}
+                      title={detail.title}
+                      explanation={detail.explanation}
+                      icon={detail.icon}
+                    />
                   ))}
                 </div>
               </ResultCard>
@@ -232,7 +302,7 @@ export default function App() {
                 <ListCard label="Final" values={output.items.final} />
                 <div className="grid gap-4 md:grid-cols-2">
                   {output.items.explanations.map((item) => (
-                    <ExplanationRow key={item.item} title={item.item} explanation={item.reason} />
+                    <ExplanationRow key={item.item} title={item.item} explanation={item.reason} icon={item.icon} />
                   ))}
                 </div>
               </ResultCard>

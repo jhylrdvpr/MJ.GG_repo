@@ -3,13 +3,18 @@ function normalizeName(value = '') {
 }
 
 function resolveItems(itemData, names) {
+  const items = itemData.items || itemData;
   return names.map((name) => {
     const normalized = normalizeName(name);
-    const entry = Object.values(itemData).find((item) => {
+    const entry = Object.values(items).find((item) => {
       const itemName = normalizeName(item.name);
       return itemName === normalized || itemName.includes(normalized) || normalized.includes(itemName);
     });
-    return entry?.name || name;
+    const resolvedName = entry?.name || name;
+    return {
+      name: resolvedName,
+      icon: itemData.itemIcons?.[resolvedName] || itemData.itemIcons?.[name] || null,
+    };
   });
 }
 
@@ -60,21 +65,26 @@ function buildRuneRecommendation(profile, runesData) {
 
   return {
     primary: primaryTree.name,
+    primaryIcon: primaryTree.icon || null,
     keystone: keystone?.name || 'Keystone',
+    keystoneIcon: keystone?.icon || null,
     secondary: secondaryTree?.name || 'Secondary Tree',
+    secondaryIcon: secondaryTree?.icon || null,
     shards: ['Adaptive Force', 'Adaptive Force', 'Armor'],
     details: [
       {
         title: keystone?.name || 'Primary Keystone',
         explanation: keystone?.description || 'Enhances your champion ability and playstyle.',
+        icon: keystone?.icon || null,
       },
       {
         title: 'Secondary Rune Path',
-        explanation: secondaryTree ? `Secondary path: ${secondaryTree.name}. Choose runes that improve your durability and utility.` : 'Choose a complementary secondary rune path.'
+        explanation: secondaryTree ? `Secondary path: ${secondaryTree.name}. Choose runes that improve your durability and utility.` : 'Choose a complementary secondary rune path.',
+        icon: secondaryTree?.icon || null,
       },
       {
         title: 'Stat Shards',
-        explanation: 'Choose adaptive force for offense, armor for defense, or magic resist for survival.'
+        explanation: 'Choose adaptive force for offense, armor for defense, or magic resist for survival.',
       },
     ],
   };
@@ -192,10 +202,19 @@ function buildItemExplanations(profile) {
     ...profile.situational,
     ...profile.final,
   ];
-  return [...new Set(allItems)].map((item) => ({
-    item,
-    reason: getItemExplanation(item),
-  }));
+  const uniqueItems = [...new Map(allItems.map((item) => {
+    const name = typeof item === 'string' ? item : item.name;
+    return [name, item];
+  })).values()];
+
+  return uniqueItems.map((item) => {
+    const name = typeof item === 'string' ? item : item.name;
+    return {
+      item: name,
+      reason: getItemExplanation(name),
+      icon: typeof item === 'string' ? null : item.icon,
+    };
+  });
 }
 
 function buildEnemyAdaptation(enemyId) {
