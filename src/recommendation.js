@@ -1,39 +1,47 @@
+function normalizeName(value = '') {
+  return value.toLowerCase().replace(/[^a-z0-9]/g, '');
+}
+
 function resolveItems(itemData, names) {
   return names.map((name) => {
-    const entry = Object.values(itemData).find((item) => item.name === name || item.name?.includes(name) || name.includes(item.name));
-    return entry ? entry.name : name;
+    const normalized = normalizeName(name);
+    const entry = Object.values(itemData).find((item) => {
+      const itemName = normalizeName(item.name);
+      return itemName === normalized || itemName.includes(normalized) || normalized.includes(itemName);
+    });
+    return entry?.name || name;
   });
 }
 
 function selectBuildProfile(tags, role) {
   const normalized = tags.map((tag) => tag.toLowerCase());
-  if (normalized.includes('assassin')) return 'assassin';
-  if (normalized.includes('marksman')) return 'marksman';
-  if (normalized.includes('support')) return 'support';
-  if (normalized.includes('tank')) return 'tank';
-  if (normalized.includes('fighter')) return 'fighter';
-  if (normalized.includes('mage')) return 'mage';
   if (role === 'ADC') return 'marksman';
   if (role === 'Mid') return 'mage';
   if (role === 'Top') return 'fighter';
   if (role === 'Jungle') return 'fighter';
+  if (role === 'Support') return 'support';
+  if (normalized.includes('mage')) return 'mage';
+  if (normalized.includes('marksman')) return 'marksman';
+  if (normalized.includes('support')) return 'support';
+  if (normalized.includes('tank')) return 'tank';
+  if (normalized.includes('fighter')) return 'fighter';
+  if (normalized.includes('assassin')) return 'assassin';
   return 'mage';
 }
 
-const treeMap = {
-  assassin: { primary: 8100, secondary: 8200 },
-  marksman: { primary: 8000, secondary: 8100 },
-  support: { primary: 8400, secondary: 8300 },
-  tank: { primary: 8400, secondary: 8300 },
-  fighter: { primary: 8000, secondary: 8400 },
-  mage: { primary: 8100, secondary: 8200 },
+const runeProfiles = {
+  assassin: { primary: 8100, secondary: 8200, keystone: 'Electrocute' },
+  marksman: { primary: 8000, secondary: 8100, keystone: 'Lethal Tempo' },
+  support: { primary: 8400, secondary: 8300, keystone: 'Guardian' },
+  tank: { primary: 8400, secondary: 8300, keystone: 'Aftershock' },
+  fighter: { primary: 8000, secondary: 8400, keystone: 'Conqueror' },
+  mage: { primary: 8200, secondary: 8100, keystone: 'Arcane Comet' },
 };
 
 function buildRuneRecommendation(profile, runesData) {
-  const primaryTreeId = treeMap[profile].primary;
-  const secondaryTreeId = treeMap[profile].secondary;
-  const primaryTree = Object.values(runesData).find((t) => t.id === primaryTreeId);
-  const secondaryTree = Object.values(runesData).find((t) => t.id === secondaryTreeId);
+  const profileConfig = runeProfiles[profile] || runeProfiles.mage;
+  const primaryTree = Object.values(runesData).find((t) => t.id === profileConfig.primary);
+  const secondaryTree = Object.values(runesData).find((t) => t.id === profileConfig.secondary);
 
   if (!primaryTree) {
     return {
@@ -45,7 +53,10 @@ function buildRuneRecommendation(profile, runesData) {
     };
   }
 
-  const keystone = primaryTree.slots[0]?.runes[0];
+  const keystone = primaryTree.slots
+    .flatMap((slot) => slot.runes)
+    .find((rune) => rune.name === profileConfig.keystone)
+    || primaryTree.slots[0]?.runes[0];
 
   return {
     primary: primaryTree.name,
@@ -59,11 +70,11 @@ function buildRuneRecommendation(profile, runesData) {
       },
       {
         title: 'Secondary Rune Path',
-        explanation: 'Provides additional utility or stats to round out your build.',
+        explanation: secondaryTree ? `Secondary path: ${secondaryTree.name}. Choose runes that improve your durability and utility.` : 'Choose a complementary secondary rune path.'
       },
       {
         title: 'Stat Shards',
-        explanation: 'Choose adaptive force for offense, armor for defense, or magic resist for survival.',
+        explanation: 'Choose adaptive force for offense, armor for defense, or magic resist for survival.'
       },
     ],
   };
@@ -132,6 +143,61 @@ const itemProfiles = {
   },
 };
 
+function getItemExplanation(item) {
+  const messages = {
+    "Doran's Blade": 'Solid early-game stats for wave control and trading.',
+    'Health Potion': 'Offers early sustain in lane fights and trades.',
+    "Youmuu's Ghostblade": 'Provides burst, mobility, and lethality for assassins.',
+    Eclipse: 'Great for burst champions, offering damage, sustain, and movement.',
+    'Edge of Night': 'Helps avoid crucial enemy crowd control and cast interruption.',
+    "Serylda's Grudge": 'Adds armor penetration and slows enemies hit by abilities.',
+    'Maw of Malmortius': 'Offers a shield against burst AP damage with bonus attack damage.',
+    'Guardian Angel': 'Grants a second life in teamfights with revive protection.',
+    "Doran's Ring": 'Combines ability power and mana sustain for early wave pressure.',
+    "Luden's Tempest": 'Delivers burst, mana, and wave clear for mages.',
+    "Sorcerer's Shoes": 'Increases magic penetration and movement speed.',
+    "Zhonya's Hourglass": 'Provides survivability and teamfight timing with stasis.',
+    "Banshee's Veil": 'Blocks a damaging spell and grants magic resist.',
+    'Morellonomicon': 'Applies grievous wounds and amplifies AP healing reduction.',
+    Shadowflame: 'Penetrates shields and boosts damage against high-health targets.',
+    'Kraken Slayer': 'Great for sustained damage against tanky opponents.',
+    "Berserker's Greaves": 'Boosts attack speed for ADC carry scaling.',
+    'Infinity Edge': 'Maximizes crit damage for marksman carries.',
+    'Mortal Reminder': 'Counters healing while offering armor penetration.',
+    'Phantom Dancer': 'Improves dueling ability and attack speed with survivability.',
+    'Stridebreaker': 'Gives mobility and damage to stick to priority targets.',
+    'Black Cleaver': 'Shreds armor and boosts repeat damage from abilities.',
+    "Sterak's Gage": 'Increases survivability and burst resistance under attack.',
+    "Death's Dance": 'Converts damage into a delayed bleed, improving sustain.',
+    'Sunfire Aegis': 'Provides consistent damage aura and frontline durability.',
+    Thornmail: 'Reflects damage and punishes auto-attack heavy champions.',
+    'Spirit Visage': 'Boosts healing and magic resistance for tanky champions.',
+    "Randuin's Omen": 'Reduces incoming crit damage and slows attackers.',
+    'Gargoyle Stoneplate': 'Great for surviving during fights with a powerful shield.',
+    "Knight's Vow": 'Helps protect your most important ally with bonus defense.',
+    'Steel Shoulderguards': 'Good support start item for sustain and lane presence.',
+    'Locket of the Iron Solari': 'Provides a team shield during engages and skirmishes.',
+    Redemption: 'Offers global healing and fight-turning utility for allies.',
+    'Plated Steelcaps': 'Reduces incoming auto-attack damage for frontline or support.',
+    "Mikael's Blessing": 'Removes crowd control effects from an ally instantly.',
+    'Abyssal Mask': 'Increases magic damage taken by nearby enemies and boosts resistances.',
+  };
+  return messages[item] || `Recommended item for this build: ${item}.`;
+}
+
+function buildItemExplanations(profile) {
+  const allItems = [
+    ...profile.start,
+    ...profile.core,
+    ...profile.situational,
+    ...profile.final,
+  ];
+  return [...new Set(allItems)].map((item) => ({
+    item,
+    reason: getItemExplanation(item),
+  }));
+}
+
 function buildEnemyAdaptation(enemyId) {
   const enemy = enemyId.toLowerCase();
   const assassins = ['zed', 'talon', 'khazix', 'ekko', 'leblanc', 'ahri'];
@@ -155,12 +221,21 @@ export function recommendBuild(champion, role, enemyId, itemData, runesData) {
   const itemProfile = itemProfiles[profileKey];
 
   const runes = buildRuneRecommendation(profileKey, runesData);
+  const startItems = resolveItems(itemData, itemProfile.start);
+  const coreItems = resolveItems(itemData, itemProfile.core);
+  const situationalItems = resolveItems(itemData, itemProfile.situational);
+  const finalItems = resolveItems(itemData, itemProfile.final);
   const items = {
-    start: resolveItems(itemData, itemProfile.start),
-    core: resolveItems(itemData, itemProfile.core),
-    situational: resolveItems(itemData, itemProfile.situational),
-    final: resolveItems(itemData, itemProfile.final),
-    explanations: itemProfile.explanations,
+    start: startItems,
+    core: coreItems,
+    situational: situationalItems,
+    final: finalItems,
+    explanations: buildItemExplanations({
+      start: startItems,
+      core: coreItems,
+      situational: situationalItems,
+      final: finalItems,
+    }),
   };
 
   return {
