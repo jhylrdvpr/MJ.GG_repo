@@ -1,9 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import SelectPanel from './components/SelectPanel.jsx';
 import ResultCard from './components/ResultCard.jsx';
-import { fetchChampionList, fetchItemData } from './api.js';
+import { fetchChampionList, fetchItemData, fetchRunesData } from './api.js';
 import { recommendBuild } from './recommendation.js';
-import { enemies } from './data.js';
 
 function Chip({ children }) {
   return (
@@ -36,9 +35,10 @@ function ExplanationRow({ title, explanation }) {
 export default function App() {
   const [champions, setChampions] = useState([]);
   const [itemData, setItemData] = useState({});
+  const [runesData, setRunesData] = useState({});
   const [championId, setChampionId] = useState('');
   const [role, setRole] = useState('Mid');
-  const [enemyId, setEnemyId] = useState('Zed');
+  const [enemyId, setEnemyId] = useState('');
   const [output, setOutput] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -49,10 +49,17 @@ export default function App() {
     async function loadData() {
       setLoading(true);
       try {
-        const [championList, items] = await Promise.all([fetchChampionList(), fetchItemData()]);
+        const [championList, items, runes] = await Promise.all([
+          fetchChampionList(),
+          fetchItemData(),
+          fetchRunesData(),
+        ]);
         setChampions(championList);
         setItemData(items);
-        setChampionId(championList.find((champ) => champ.name === 'Ahri')?.id ?? championList[0]?.id ?? '');
+        setRunesData(runes);
+        const ahrId = championList.find((champ) => champ.name === 'Ahri')?.id ?? championList[0]?.id ?? '';
+        setChampionId(ahrId);
+        setEnemyId(championList[1]?.id ?? championList[0]?.id ?? '');
       } catch (err) {
         console.error(err);
         setError('Could not load League of Legends data. Check your connection and try again.');
@@ -71,8 +78,8 @@ export default function App() {
   };
 
   const onGenerate = () => {
-    if (!champion || !Object.keys(itemData).length) return;
-    setOutput(recommendBuild(champion, role, enemyId, itemData));
+    if (!champion || !Object.keys(itemData).length || !Object.keys(runesData).length) return;
+    setOutput(recommendBuild(champion, role, enemyId, itemData, runesData));
   };
 
   return (
@@ -96,7 +103,6 @@ export default function App() {
           role={role}
           enemyId={enemyId}
           data={champions}
-          enemies={enemies}
           onChange={onChange}
           onGenerate={onGenerate}
         />

@@ -35,3 +35,28 @@ export async function fetchItemData() {
   const raw = await response.json();
   return raw.data;
 }
+
+export async function fetchRunesData() {
+  const version = await getLatestVersion();
+  const response = await fetch(`${DATA_DRAGON_BASE}/${version}/data/${LOCALE}/runetree.json`);
+  const raw = await response.json();
+  
+  // Normalize runes into a flat map for easy lookup
+  const runeMap = {};
+  raw.forEach((tree) => {
+    runeMap[tree.id] = {
+      id: tree.id,
+      name: tree.name,
+      slots: tree.slots.map((slot) => ({
+        runes: slot.runes.map((rune) => ({
+          id: rune.id,
+          key: rune.key,
+          name: rune.name,
+          description: rune.longDesc,
+        })),
+      })),
+    };
+  });
+  
+  return runeMap;
+}
