@@ -42,8 +42,31 @@ export default function App() {
   const [output, setOutput] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [summonerName, setSummonerName] = useState('Faker');
+  const [summonerData, setSummonerData] = useState(null);
+  const [riotLoading, setRiotLoading] = useState(false);
+  const [riotError, setRiotError] = useState(null);
 
   const champion = useMemo(() => champions.find((champ) => champ.id === championId), [champions, championId]);
+
+  async function fetchSummoner() {
+    setRiotLoading(true);
+    setRiotError(null);
+    try {
+      const response = await fetch(`/api/riot/summoner/na1/${encodeURIComponent(summonerName)}`);
+      if (!response.ok) {
+        throw new Error(`Riot API request failed: ${response.status}`);
+      }
+      const data = await response.json();
+      setSummonerData(data);
+    } catch (err) {
+      console.error(err);
+      setRiotError('Could not load Riot account data. Check the API proxy and key.');
+      setSummonerData(null);
+    } finally {
+      setRiotLoading(false);
+    }
+  }
 
   useEffect(() => {
     async function loadData() {
@@ -82,6 +105,10 @@ export default function App() {
     setOutput(recommendBuild(champion, role, enemyId, itemData, runesData));
   };
 
+  const onFetchSummoner = async () => {
+    await fetchSummoner();
+  };
+
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
       <header className="mb-8 flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
@@ -98,6 +125,47 @@ export default function App() {
       </header>
 
       <main className="space-y-8">
+        <section className="rounded-3xl border border-slate-800/80 bg-slate-900/80 p-6 shadow-glow backdrop-blur-xl">
+          <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="text-sm uppercase tracking-[0.3em] text-cyan-300/80">Riot API Lookup</p>
+              <h2 className="mt-3 text-3xl font-semibold text-slate-100">Summoner Data</h2>
+            </div>
+            <button
+              onClick={onFetchSummoner}
+              className="inline-flex items-center justify-center rounded-2xl bg-cyan-500 px-6 py-3 text-sm font-semibold text-slate-950 transition hover:bg-cyan-400"
+            >
+              Fetch Summoner
+            </button>
+          </div>
+          <div className="grid gap-4 md:grid-cols-2">
+            <label className="space-y-2">
+              <span className="text-sm text-slate-300">Summoner Name</span>
+              <input
+                type="text"
+                value={summonerName}
+                onChange={(e) => setSummonerName(e.target.value)}
+                className="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-100 outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-500/20"
+              />
+            </label>
+            <div className="rounded-3xl border border-slate-800 bg-slate-950/80 p-4">
+              {riotLoading ? (
+                <p className="text-slate-400">Fetching Riot data...</p>
+              ) : riotError ? (
+                <p className="text-red-400">{riotError}</p>
+              ) : summonerData ? (
+                <div className="space-y-2 text-slate-200">
+                  <p><strong>Summoner:</strong> {summonerData.name}</p>
+                  <p><strong>Level:</strong> {summonerData.summonerLevel}</p>
+                  <p><strong>PUUID:</strong> {summonerData.puuid}</p>
+                </div>
+              ) : (
+                <p className="text-slate-400">Enter a summoner name and click fetch to test the Riot key.</p>
+              )}
+            </div>
+          </div>
+        </section>
+
         <SelectPanel
           championId={championId}
           role={role}
