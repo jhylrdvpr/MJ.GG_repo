@@ -6,15 +6,45 @@ let cachedVersion = null;
 
 export async function getLatestVersion() {
   if (cachedVersion) return cachedVersion;
+
   const response = await fetch(VERSIONS_URL);
+
+  if (!response.ok) {
+    throw new Error(
+      `Failed to fetch Data Dragon versions: ${response.status} ${response.statusText}`
+    );
+  }
+
   const versions = await response.json();
   cachedVersion = versions[0];
+
   return cachedVersion;
+}
+
+function htmlToText(html) {
+  if (!html) return '';
+
+  // Browser-safe conversion
+  const doc = new DOMParser().parseFromString(html, 'text/html');
+
+  return (doc.body.textContent || '')
+    .replace(/\s+/g, ' ')
+    .trim();
 }
 
 export async function fetchChampionList() {
   const version = await getLatestVersion();
-  const response = await fetch(`${DATA_DRAGON_BASE}/${version}/data/${LOCALE}/champion.json`);
+
+  const response = await fetch(
+    `${DATA_DRAGON_BASE}/${version}/data/${LOCALE}/champion.json`
+  );
+
+  if (!response.ok) {
+    throw new Error(
+      `Failed to fetch champions: ${response.status} ${response.statusText}`
+    );
+  }
+
   const raw = await response.json();
 
   return Object.values(raw.data)
@@ -32,13 +62,24 @@ export async function fetchChampionList() {
 
 export async function fetchItemData() {
   const version = await getLatestVersion();
-  const response = await fetch(`${DATA_DRAGON_BASE}/${version}/data/${LOCALE}/item.json`);
+
+  const response = await fetch(
+    `${DATA_DRAGON_BASE}/${version}/data/${LOCALE}/item.json`
+  );
+
+  if (!response.ok) {
+    throw new Error(
+      `Failed to fetch items: ${response.status} ${response.statusText}`
+    );
+  }
+
   const raw = await response.json();
   const items = raw.data;
   const itemIcons = {};
 
   Object.values(items).forEach((item) => {
-    itemIcons[item.name] = `${DATA_DRAGON_BASE}/${version}/img/item/${item.image.full}`;
+    itemIcons[item.name] =
+      `${DATA_DRAGON_BASE}/${version}/img/item/${item.image.full}`;
   });
 
   return { items, itemIcons };
@@ -46,14 +87,19 @@ export async function fetchItemData() {
 
 export async function fetchRunesData() {
   const version = await getLatestVersion();
-  const url = `${DATA_DRAGON_BASE}/${version}/data/${LOCALE}/runesReforged.json`;
+
+  const url =
+    `${DATA_DRAGON_BASE}/${version}/data/${LOCALE}/runesReforged.json`;
 
   const res = await fetch(url);
-  if (!res.ok) {
-    throw new Error(`Could not load rune data from Data Dragon: ${res.status} ${res.statusText}`);
-  }
-  const raw = await res.json(); // always an array in runesReforged.json
 
+  if (!res.ok) {
+    throw new Error(
+      `Could not load rune data from Data Dragon: ${res.status} ${res.statusText}`
+    );
+  }
+
+  const raw = await res.json();
   const runeMap = {};
 
   raw.forEach((tree) => {
@@ -62,9 +108,12 @@ export async function fetchRunesData() {
         id: rune.id,
         key: rune.key,
         name: rune.name,
-        description: rune.longDesc || rune.shortDesc || '',
-        // runesReforged icons are already full paths like "perk-images/Styles/..."
-        // Data Dragon serves them under /img/ — no version prefix needed here
+
+        // Convert Riot HTML descriptions into plain text
+        description: htmlToText(
+          rune.longDesc || rune.shortDesc || ''
+        ),
+
         icon: rune.icon
           ? `https://ddragon.leagueoflegends.com/cdn/img/${rune.icon}`
           : null,
@@ -75,9 +124,11 @@ export async function fetchRunesData() {
       id: tree.id,
       name: tree.name,
       key: tree.key,
+
       icon: tree.icon
         ? `https://ddragon.leagueoflegends.com/cdn/img/${tree.icon}`
         : null,
+
       slots: normalizedSlots,
     };
   });
