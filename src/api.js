@@ -46,71 +46,38 @@ export async function fetchItemData() {
 
 export async function fetchRunesData() {
   const version = await getLatestVersion();
-  const primaryUrl = `${DATA_DRAGON_BASE}/${version}/data/${LOCALE}/runetree.json`;
-  const fallbackUrl = `${DATA_DRAGON_BASE}/${version}/data/${LOCALE}/runesReforged.json`;
+  const url = `${DATA_DRAGON_BASE}/${version}/data/${LOCALE}/runesReforged.json`;
 
-  async function tryFetch(url) {
-    const res = await fetch(url);
-    if (!res.ok) {
-      const err = new Error(`Failed to fetch ${url}: ${res.status} ${res.statusText}`);
-      err.status = res.status;
-      throw err;
-    }
-    return res.json();
+  const res = await fetch(url);
+  if (!res.ok) {
+    throw new Error(`Could not load rune data from Data Dragon: ${res.status} ${res.statusText}`);
   }
+  const raw = await res.json(); // always an array in runesReforged.json
 
-  let raw;
-  try {
-    raw = await tryFetch(primaryUrl);
-  } catch (err) {
-    if (err.status === 403 || err.status === 404) {
-      try {
-        raw = await tryFetch(fallbackUrl);
-      } catch (err2) {
-        throw new Error(`Could not load rune data from Data Dragon (tried ${primaryUrl} and ${fallbackUrl}): ${err2.message}`);
-      }
-    } else {
-      throw new Error(`Could not load rune data from Data Dragon: ${err.message}`);
-    }
-  }
-
-  // Normalize runes into a flat map for easy lookup. DataDragon may return an array
-  // (runesReforged.json) or an object/array shape for runetree.json.
-  const trees = Array.isArray(raw) ? raw : (raw.data || raw);
   const runeMap = {};
 
-  trees.forEach((tree) => {
-    let normalizedSlots = [];
-
-    if (Array.isArray(tree.slots)) {
-      normalizedSlots = tree.slots.map((slot) => {
-        const runes = Array.isArray(slot.runes)
-          ? slot.runes.map((rune) => ({
-              id: rune.id,
-              key: rune.key,
-              name: rune.name,
-              description: rune.longDesc || rune.shortDesc || rune.longDesc,
-              icon: rune.icon ? `${DATA_DRAGON_BASE}/${version}/img/${rune.icon}` : rune.icon,
-            }))
-          : [];
-        return { runes };
-      });
-    } else if (Array.isArray(tree.runes)) {
-      normalizedSlots = [{
-        runes: tree.runes.map((rune) => ({
-          id: rune.id,
-          key: rune.key,
-          name: rune.name,
-          description: rune.longDesc || rune.shortDesc,
-          icon: rune.icon ? `${DATA_DRAGON_BASE}/${version}/img/${rune.icon}` : rune.icon,
-        })),
-      }];
-    }
+  raw.forEach((tree) => {
+    const normalizedSlots = tree.slots.map((slot) => ({
+      runes: slot.runes.map((rune) => ({
+        id: rune.id,
+        key: rune.key,
+        name: rune.name,
+        description: rune.longDesc || rune.shortDesc || '',
+        // runesReforged icons are already full paths like "perk-images/Styles/..."
+        // Data Dragon serves them under /img/ — no version prefix needed here
+        icon: rune.icon
+          ? `https://ddragon.leagueoflegends.com/cdn/img/${rune.icon}`
+          : null,
+      })),
+    }));
 
     runeMap[tree.id] = {
       id: tree.id,
-      name: tree.name || tree.key || '',
-      icon: tree.icon ? `${DATA_DRAGON_BASE}/${version}/img/${tree.icon}` : tree.icon,
+      name: tree.name,
+      key: tree.key,
+      icon: tree.icon
+        ? `https://ddragon.leagueoflegends.com/cdn/img/${tree.icon}`
+        : null,
       slots: normalizedSlots,
     };
   });
